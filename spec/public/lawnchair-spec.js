@@ -196,6 +196,40 @@ module('Lawnchair', {
         equals(store.adaptor.uuid().length, 36, "uuid() function should create a 36 character string");
         ok(store.adaptor.uuid() != store.adaptor.uuid(), 'simple inequality test on consecutive calls to uuid()');
     });
+    
+module('Capacity Tests', {
+   setup:function() {
+       store.nuke();
+   },
+   teardown:function() {
+       
+   }
+});
+    test('Capacity Tests', function() {
+        QUnit.stop();
+
+        var iterations = 15,
+            key = 'perft',
+            obj = {'key':key,value:[]}, // base size of 24 bytes.
+            dummy = {'test':'test'};        // 16 bytes per dummy (with comma) in the master object.
+
+        expect(iterations*2);
+
+        var run = function(times) {
+            if (times == 0) {
+                QUnit.start();
+            } else return function() {
+                ok(true, 'save() callback called after saving a ' + (24 + (Math.pow(2, iterations - times) - 1)*16) + ' byte object.');
+                store.get(key, function(item) {
+                    var numLoops = Math.pow(2, (iterations-times+1)); // double the records each time.
+                    equals(item.value.length, numLoops, 'get() callback should have bigger item each time');
+                    for (var i = 0; i < numLoops; i++) item.value.push(dummy); // add 16 bytes to the object.
+                    store.save(obj, run(times-1)); // recurse.
+                });
+            }
+        }
+        store.save(obj, run(iterations)); // 
+    });
 /*	
 
 should( 'get 10 items in a page.', function() {
